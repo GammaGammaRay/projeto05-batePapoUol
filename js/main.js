@@ -28,31 +28,13 @@ function login() {
     }
 }
 
-
-// function checkUniqueUsername(user, data) {
-//     // print online users
-//     // let i = 0;
-//     // while(i < response.data.length) {
-//         //     console.log(response.data[i].name);
-//         //     i++;
-//         // }
-//         for(let i = 0; i < data.length; i++) {
-//             if(user == data[i].name) {
-//                 return false;
-//             }
-//             else {
-//                 return true;
-//             }
-//         }
-//     }
-
 function checkUniqueUsername(user, data) {
     // print online users
-    let i = 0;
-    while(i < data.length) {
-            console.log(data[i].name);
-            i++;
-        }
+    // let i = 0;
+    // while(i < data.length) {
+    //         console.log(data[i].name);
+    //         i++;
+    //     }
         for(let i = 0; i < data.length; i++) {
             if(user == data[i].name) {
                 return false;
@@ -64,22 +46,43 @@ function checkUniqueUsername(user, data) {
 function enterChat() {
     loginScreen.style.display = 'none';
     chatScreen.style.display = 'flex';
+
+    printMessages();
 }
-    
+
+function printMessages() {
+    var data = getMessages();
+
+    for(let i = 0; i < data.length; i++) {
+        console.log(data[i].text);
+    }
+}
+
 function axiosSignIn(name) {
     const n = {name: "${name}"};
     axios.post('https://mock-api.driven.com.br/api/vm/uol/participants', n);
 }
 
 function axiosStatusUpdate(name) {
-    const n = `{name: "${name}"}`;
+    const n = {name: `"${name}"`};
     setTimeout(
         axiousStatusUpdate.post('https://mock-api.driven.com.br/api/vm/uol/status', n)
     , 5000)
 }
 
 function getMessages() {
-    // setTimeout{
-        
-    // }
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            axios.get('https://mock-api.driven.com.br/api/vm/uol/messages')
+                .then(response => {
+                    for(let i = 0; i < response.data.length; i++) {
+                        console.log(response.data[i]);
+                    }
+                    resolve(response.data);
+                })
+                .catch(error => {
+                    reject(error);
+                });
+        }, 200);
+    });
 }
