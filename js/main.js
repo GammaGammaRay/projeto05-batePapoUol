@@ -12,11 +12,10 @@ function login() {
     } else {
         data.then(response => {
             
-
             if (checkUniqueUsername(username, response.data)) {
                 console.log("unique username");
                 axiosSignIn(username);
-                enterChat();
+                enterChat(response.data);
                 return true;
               } else {
                 alert("O apelido já está sendo usado.");
@@ -29,12 +28,6 @@ function login() {
 }
 
 function checkUniqueUsername(user, data) {
-    // print online users
-    // let i = 0;
-    // while(i < data.length) {
-    //         console.log(data[i].name);
-    //         i++;
-    //     }
         for(let i = 0; i < data.length; i++) {
             if(user == data[i].name) {
                 return false;
@@ -43,20 +36,19 @@ function checkUniqueUsername(user, data) {
         return true;
 }
 
-function enterChat() {
+function enterChat(data) {
+    var messages = getMessages();
+    console.log(messages);
+
+    console.log(getMessages());
     loginScreen.style.display = 'none';
     chatScreen.style.display = 'flex';
-
-    printMessages();
-}
-
-function printMessages() {
-    var data = getMessages();
-
-    for(let i = 0; i < data.length; i++) {
-        console.log(data[i].text);
+    for (let i = 0; i < messages.length; i++) {
+        renderMessage(messages[i]);
     }
 }
+
+
 
 function axiosSignIn(name) {
     const n = {name: "${name}"};
@@ -77,6 +69,7 @@ function getMessages() {
                 .then(response => {
                     for(let i = 0; i < response.data.length; i++) {
                         console.log(response.data[i]);
+                        renderMessage(response.data[i]);
                     }
                     resolve(response.data);
                 })
@@ -85,4 +78,45 @@ function getMessages() {
                 });
         }, 200);
     });
+}
+
+var content = document.getElementById('content');
+
+
+function renderMessage(data) {
+    console.log("render message");
+    if(data.type === "status") {
+        content.innerHTML += `<div class="msg-container">
+        <p class="msg">
+          <span class="time-stamp">${data.time}</span>
+          <span class="msg-fromUser">${data.from}</span>
+          <span class="msg-text">${data.text}</span>
+        </p>
+        </div>`;
+    }
+    else if (data.type === "message") {
+        if (data.to === "Todos" || data.to === "everyone") {
+            content.innerHTML += `<div class="msg-container">
+            <p class="msg">
+              <span class="time-stamp">${data.time}</span>
+              <span class="msg-fromUser">${data.from}</span>
+              <span class="msg-toUser">${data.to}</span>
+              <span class="msg-text">${data.text}</span>
+            </p>
+            </div>`;
+        }
+        else {
+            content.innerHTML += `<div class="msg-container">
+            <p class="msg">
+              <span class="time-stamp">${data.time}</span>
+              <span class="msg-fromUser">${data.from}</span>
+              <span class="msg-toUser">${data.to}</span>
+              <span class="msg-text">${data.text}</span>
+            </p>
+            </div>`;
+        }
+    }
+    else {
+        console.log("unrecognized message type")
+    }
 }

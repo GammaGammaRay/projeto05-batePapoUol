@@ -39,11 +39,15 @@
       <img src="img/people 1.png" alt="people icon">
     </div>
   
-    <div class="content" id="content">
-      <div class="msg-box">
-  
-      </div>
+    <div class="content" id="content">      
     </div>
+
+    <div id="send-msg-box">
+      <form>
+        <input id="msg-input" type="text" value="Escreva aqui..." onblur="if(this.value==''){ this.value='Escreva aqui...'}" onfocus="if(this.value=='Escreva aqui...'){ this.value=''}">
+      </form>
+    </div>
+
   </div>
 
 
