@@ -3,19 +3,26 @@ axios.defaults.headers.common['Authorization'] = '5wY65Pq5uCOFfh5yfnMVGhIF';
 const chatScreen = document.getElementById('chat-screen');
 const loginScreen = document.getElementById('login-screen');
 
+const now = new Date();
+const currentTime = now.toLocaleTimeString(undefined, {hour12: false});
+console.log(currentTime); 
+
+var username = "";
+
 function login() {
-    var username = document.getElementById("username").value;
+    var newUser = document.getElementById("username").value;
     var data = axios.get('https://mock-api.driven.com.br/api/vm/uol/participants');
 
-    if(username === null || username === 'Digite seu nome') {
+    if(newUser === null || newUser === 'Digite seu nome') {
         alert("Escreva um apelido");
     } else {
         data.then(response => {
             
-            if (checkUniqueUsername(username, response.data)) {
+            if (checkUniqueUsername(newUser, response.data)) {
                 console.log("unique username");
-                axiosSignIn(username);
+                axiosSignIn(newUser);
                 enterChat(response.data);
+                username = newUser;
                 return true;
               } else {
                 alert("O apelido já está sendo usado.");
@@ -41,25 +48,20 @@ function enterChat(data) {
     console.log(messages);
 
     console.log(getMessages());
+
     loginScreen.style.display = 'none';
     chatScreen.style.display = 'flex';
+
     for (let i = 0; i < messages.length; i++) {
         renderMessage(messages[i]);
     }
 }
 
-
-
-function axiosSignIn(name) {
-    const n = {name: "${name}"};
-    axios.post('https://mock-api.driven.com.br/api/vm/uol/participants', n);
-}
-
-function axiosStatusUpdate(name) {
-    const n = {name: `"${name}"`};
-    setTimeout(
-        axiousStatusUpdate.post('https://mock-api.driven.com.br/api/vm/uol/status', n)
-    , 5000)
+function timeOffset(time, offset) {
+    var [h,m,s] = time.split(':');
+    console.log(h,m,s);
+    hour = (parseInt(h)+ offset) % 12;
+    return `${hour}:${m}:${s}`;
 }
 
 function getMessages() {
@@ -67,11 +69,15 @@ function getMessages() {
         setTimeout(() => {
             axios.get('https://mock-api.driven.com.br/api/vm/uol/messages')
                 .then(response => {
+                    resolve(response.data);
                     for(let i = 0; i < response.data.length; i++) {
+                        const newTime = timeOffset(response.data[i].time,9);
+                        response.data[i].time = newTime;
+
                         console.log(response.data[i]);
                         renderMessage(response.data[i]);
                     }
-                    resolve(response.data);
+                    
                 })
                 .catch(error => {
                     reject(error);
@@ -82,9 +88,12 @@ function getMessages() {
 
 var content = document.getElementById('content');
 
-
 function renderMessage(data) {
-    console.log("render message");
+
+    if (data.from === '${name}') {
+        return
+    }
+
     if(data.type === "status") {
         content.innerHTML += `<div class="msg-container">
         <p class="msg">
@@ -94,7 +103,7 @@ function renderMessage(data) {
         </p>
         </div>`;
     }
-    else if (data.type === "message") {
+    else if (data.type === "message" || data.type === "private_message") {
         if (data.to === "Todos" || data.to === "everyone") {
             content.innerHTML += `<div class="msg-container">
             <p class="msg">
@@ -120,3 +129,16 @@ function renderMessage(data) {
         console.log("unrecognized message type")
     }
 }
+
+function axiosSignIn(name) {
+    const n = {name};
+    axios.post('https://mock-api.driven.com.br/api/vm/uol/participants', n);
+}
+
+function axiosStatusUpdate(name) {
+    const n = {name: `"${name}"`};
+    setTimeout(
+        axiousStatusUpdate.post('https://mock-api.driven.com.br/api/vm/uol/status', n)
+    , 5000)
+}
+
