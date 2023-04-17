@@ -2,36 +2,61 @@
 axios.defaults.headers.common['Authorization'] = '5wY65Pq5uCOFfh5yfnMVGhIF';
 const chatScreen = document.getElementById('chat-screen');
 const loginScreen = document.getElementById('login-screen');
+const sendMsgBox = document.getElementById('send-msg-box');
+const content = document.getElementById('content');
 
-const now = new Date();
-const currentTime = now.toLocaleTimeString(undefined, {hour12: false});
-console.log(currentTime); 
+var now = new Date();
+var currentTime = now.toLocaleTimeString(undefined, {hour12: false});
+
+function updateTime() {
+    now = new Date();
+    currentTime = now.toLocaleTimeString(undefined, {hour12: false});
+    // console.log("current time: " + currentTime); 
+}
+
+var messages = [];
+
+setInterval(updateTime, 1000);
+
 
 var username = "";
 
 function login() {
     var newUser = document.getElementById("username").value;
-    var data = axios.get('https://mock-api.driven.com.br/api/vm/uol/participants');
 
     if(newUser === null || newUser === 'Digite seu nome') {
         alert("Escreva um apelido");
     } else {
-        data.then(response => {
-            
-            if (checkUniqueUsername(newUser, response.data)) {
-                console.log("unique username");
-                axiosSignIn(newUser);
-                enterChat(response.data);
-                username = newUser;
-                return true;
-              } else {
-                alert("O apelido já está sendo usado.");
-              }
+        axios.get('https://mock-api.driven.com.br/api/vm/uol/participants')
+            .then(response => {
+                if (checkUniqueUsername(newUser, response.data)) {
+                    username = newUser;
+                    enterChat();
+                    return true;
+                } else {
+                    alert("O apelido já está sendo usado.");
+                }
             })
             .catch(error => {
-              console.error(error);
+                console.error(error);
             });
     }
+}
+
+function enterChat() {
+    loginScreen.style.display = 'none';
+    chatScreen.style.display = 'flex';
+    sendMsgBox.style.display = 'flex';
+
+    axiosSignIn(username);
+    
+    setInterval(() => {
+        axiosStatusUpdate(username);
+    }, 5000);
+
+    messages = getMessages();
+    console.log("messages: " + messages);
+    renderMessages();
 }
 
 function checkUniqueUsername(user, data) {
@@ -43,59 +68,55 @@ function checkUniqueUsername(user, data) {
         return true;
 }
 
-function enterChat(data) {
-    var messages = getMessages();
-    console.log(messages);
-
-    console.log(getMessages());
-
-    loginScreen.style.display = 'none';
-    chatScreen.style.display = 'flex';
-
-    for (let i = 0; i < messages.length; i++) {
-        renderMessage(messages[i]);
-    }
-}
-
-function timeOffset(time, offset) {
-    var [h,m,s] = time.split(':');
-    console.log(h,m,s);
-    hour = (parseInt(h)+ offset) % 12;
-    return `${hour}:${m}:${s}`;
-}
 
 function getMessages() {
+    console.log("get messages");
     return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            axios.get('https://mock-api.driven.com.br/api/vm/uol/messages')
-                .then(response => {
-                    resolve(response.data);
-                    for(let i = 0; i < response.data.length; i++) {
-                        const newTime = timeOffset(response.data[i].time,9);
-                        response.data[i].time = newTime;
+        axios.get('https://mock-api.driven.com.br/api/vm/uol/messages')
+            .then(response => {
+                resolve(response.data);
+            })
+            .catch(error => {
+                reject(error);
+            });
+    })
+}
 
-                        console.log(response.data[i]);
-                        renderMessage(response.data[i]);
-                    }
-                    
-                })
-                .catch(error => {
-                    reject(error);
-                });
-        }, 200);
+
+function renderMessages() {
+    console.log("render messages");
+    messages.then((data) => {
+        console.log(messages);
+        for(let i = 0; i < data.length; i++) {
+            
+            const msgTime = timeOffset(data[i].time,9);
+            data[i].time = msgTime;
+            // console.log(data[i]);
+            if(compareTime(currentTime, msgTime)) {
+                lastMsgIndex = i;
+                console.log("current time:" + currentTime);
+                console.log("msg time:" + msgTime);
+                renderMessageHTML(data[i]);
+                
+            }
+        }
+    }).finally(() => {
+        setTimeout(() => {
+            renderMessages();
+        }, 1000);
     });
 }
 
-var content = document.getElementById('content');
 
-function renderMessage(data) {
 
+function renderMessageHTML(data) {
+    
     if (data.from === '${name}') {
         return
     }
 
     if(data.type === "status") {
-        content.innerHTML += `<div class="msg-container">
+        content.innerHTML += `<div class="msg-container" data-test="message">
         <p class="msg">
           <span class="time-stamp">${data.time}</span>
           <span class="msg-fromUser">${data.from}</span>
@@ -105,7 +126,7 @@ function renderMessage(data) {
     }
     else if (data.type === "message" || data.type === "private_message") {
         if (data.to === "Todos" || data.to === "everyone") {
-            content.innerHTML += `<div class="msg-container">
+            content.innerHTML += `<div class="msg-container" data-test="message">
             <p class="msg">
               <span class="time-stamp">${data.time}</span>
               <span class="msg-fromUser">${data.from}</span>
@@ -115,7 +136,7 @@ function renderMessage(data) {
             </div>`;
         }
         else {
-            content.innerHTML += `<div class="msg-container">
+            content.innerHTML += `<div class="msg-container" data-test="message">
             <p class="msg">
               <span class="time-stamp">${data.time}</span>
               <span class="msg-fromUser">${data.from}</span>
@@ -123,6 +144,7 @@ function renderMessage(data) {
               <span class="msg-text">${data.text}</span>
             </p>
             </div>`;
+
         }
     }
     else {
@@ -131,14 +153,37 @@ function renderMessage(data) {
 }
 
 function axiosSignIn(name) {
-    const n = {name};
+    const n = {name: name};
+    console.log(n);
     axios.post('https://mock-api.driven.com.br/api/vm/uol/participants', n);
 }
 
 function axiosStatusUpdate(name) {
-    const n = {name: `"${name}"`};
-    setTimeout(
-        axiousStatusUpdate.post('https://mock-api.driven.com.br/api/vm/uol/status', n)
-    , 5000)
+    const n = {name: name};
+    axios.post('https://mock-api.driven.com.br/api/vm/uol/status', n)
+    console.log("axios status update");
 }
 
+function convertToSeconds(time) {
+    const [h,m,s] = time.split(':')
+    var seconds = h * 3600 + m * 60 + s;
+    return seconds;
+}
+
+function compareTime(userTime, msgTime) {
+    uTime = convertToSeconds(userTime);
+    mTime = convertToSeconds(msgTime);
+
+    const secondsBefore = 1;
+
+    if(mTime <= uTime && mTime >= uTime - secondsBefore) {
+        return true;
+    } else{return false;}
+}
+
+function timeOffset(time, offset) {
+    var [h,m,s] = time.split(':');
+    hour = (parseInt(h)+ offset) % 24;
+    hour = hour.toString().padStart(2, '0');
+    return `${hour}:${m}:${s}`;
+}
