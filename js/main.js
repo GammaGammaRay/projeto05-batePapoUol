@@ -174,9 +174,10 @@ function sendMsg() {
     axios.post("https://mock-api.driven.com.br/api/vm/uol/messages", msgObj)
         .then(response => {
             console.log(response)
-            msgInput.value = "Escreva aqui..."
+            msgInput.value = ''
         }).catch(error => {
             console.error(error);
+            window.location.reload();
             window.alert("Erro de envio");
         });
     } else {
