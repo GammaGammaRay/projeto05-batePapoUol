@@ -48,8 +48,10 @@
 
   <div id="send-msg-box">
     <form>
-      <input id="msg-input" type="text" value="Escreva aqui..." onblur="if(this.value==''){ this.value='Escreva aqui...'}" onfocus="if(this.value=='Escreva aqui...'){ this.value=''}">
+      <input data-test="input-message" id="msg-input" type="text" value="Escreva aqui..." onblur="if(this.value==''){ this.value='Escreva aqui...'}" onfocus="if(this.value=='Escreva aqui...'){ this.value=''}">
     </form>
+
+    <button data-test="send-message" type="button" id="send-msg-btn"><img src="img/airplane.svg" alt="" onclick="sendMsg()"></button>
   </div>
   
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
