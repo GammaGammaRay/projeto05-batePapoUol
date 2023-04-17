@@ -27,9 +27,9 @@
   <div id="login-screen" class="login">
     <img src="img/logo_uol.png" alt="logo da uol">
       <form class="login-input">
-        <input class="username-btn" type="text" id="username" name="username" value="Digite seu nome" onblur="if(this.value==''){ this.value='Digite seu nome'}" onfocus="if(this.value=='Digite seu nome'){ this.value=''}">
+        <input data-test="input-name" class="username-btn" type="text" id="username" name="username" value="Digite seu nome" onblur="if(this.value==''){ this.value='Digite seu nome'}" onfocus="if(this.value=='Digite seu nome'){ this.value=''}">
         <br><br>
-        <input class="login-btn" type="button" value="Entrar" onclick="login()">
+        <input data-test="send-name" class="login-btn" type="button" value="Entrar" onclick="login()">
       </form>
   </div>
 
