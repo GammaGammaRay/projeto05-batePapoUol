@@ -6,21 +6,7 @@ const sendMsgBox = document.getElementById('send-msg-box');
 const content = document.getElementById('content');
 const msgInput = document.querySelector("#msg-input");
 
-var now = new Date();
-var currentTime = now.toLocaleTimeString(undefined, {hour12: false});
-
-function updateTime() {
-    now = new Date();
-    currentTime = now.toLocaleTimeString(undefined, {hour12: false});
-    // console.log("current time: " + currentTime); 
-}
-
 var messages = [];
-var lastMsgTime = -1;
-
-setInterval(updateTime, 1000);
-// setInterval(renderMessages, 1000);
-
 
 var username = "";
 
@@ -78,7 +64,8 @@ function enterChat() {
 
 function checkUniqueUsername(user, data) {
         for(let i = 0; i < data.length; i++) {
-            if(user == data[i].name) {
+            console.log(data[i].name); 
+            if(user === data[i].name) {
                 return false;
             }
         }
@@ -154,9 +141,28 @@ function renderMessageHTML(data) {
     }
 }
 
+function checkIfStillLogged(username) {
+    return axios
+      .get("https://mock-api.driven.com.br/api/vm/uol/participants")
+      .then((response) => {
+        for (let i = 0; i < response.data.length; i++) {
+          if (username === response.data[i].name) {
+            return true;
+          }
+        }
+        return false;
+      })
+      .catch((error) => {
+        console.error(error);
+        return false;
+      });
+  }
+
 function sendMsg() {
     console.log("send message click")
-    const message = msgInput.value;
+
+    if(checkIfStillLogged(username)){
+        const message = msgInput.value;
     
     let msgObj = {
         from: username,
@@ -173,6 +179,11 @@ function sendMsg() {
             console.error(error);
             window.alert("Erro de envio");
         });
+    } else {
+        window.location.reload();
+    }
+    
+    
 }
 
 function axiosSignIn(name) {
@@ -186,3 +197,10 @@ function axiosStatusUpdate(name) {
     axios.post('https://mock-api.driven.com.br/api/vm/uol/status', n)
     console.log("axios status update");
 }
+
+msgInput.addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        sendMsg();
+    }
+});
