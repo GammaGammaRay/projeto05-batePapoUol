@@ -37,7 +37,6 @@ function login() {
                 console.log("unique username");
                 username = newUser;
                 enterChat();
-                return true;
               } else {
                 alert("O apelido já está sendo usado.");
               }
@@ -53,22 +52,28 @@ function enterChat() {
     chatScreen.style.display = 'flex';
     sendMsgBox.style.display = 'flex';
 
-    axiosSignIn(username);
+    axiosSignIn(username)
+        .then(() => {
+            //send status update every 5s
+            setInterval(() => {
+                axiosStatusUpdate(username);
+            }, 5000);
 
-    setInterval(() => {
-        axiosStatusUpdate(username);
-    }, 5000);
-
-    setInterval(() => {
-        getMessages()
-            .then(response => {
-                messages = response;
-                renderMessages(messages);
-            })
-            .catch(error => {
-                console.error(error);
-            });
-    }, 2000);
+            //get messages every 2s
+            setInterval(() => {
+                getMessages()
+                    .then(response => {
+                        messages = response;
+                        renderMessages(messages);
+                    })
+                    .catch(error => {
+                        console.error(error);
+                    });
+            }, 2000);
+        })
+        .catch(error => {
+            console.error(error);
+        });
 }
 
 function checkUniqueUsername(user, data) {
@@ -113,9 +118,9 @@ function renderMessageHTML(data) {
     if(data.type === "status") {
         content.innerHTML += `<div class="msg-container status" data-test="message">
         <p class="msg">
-          <span class="time-stamp">${data.time}</span>
+          <span class="msg-time">(${data.time})</span>
           <span class="msg-fromUser">${data.from}</span>
-          <span class="msg-text">${data.text}</span>
+          <span class="msg-text">: ${data.text}</span>
         </p>
         </div>`;
     }
@@ -123,20 +128,22 @@ function renderMessageHTML(data) {
         if (data.to === "Todos" || data.to === "everyone") {
             content.innerHTML += `<div class="msg-container" data-test="message">
             <p class="msg">
-              <span class="time-stamp">${data.time}</span>
+              <span class="msg-time">(${data.time})</span>
               <span class="msg-fromUser">${data.from}</span>
+              <span> para </span>
               <span class="msg-toUser">${data.to}</span>
-              <span class="msg-text">${data.text}</span>
+              <span class="msg-text">: ${data.text}</span>
             </p>
             </div>`;
         }
         else {
             content.innerHTML += `<div class="msg-container pvt" data-test="message">
             <p class="msg">
-              <span class="time-stamp">${data.time}</span>
+              <span class="msg-time">(${data.time})</span>
               <span class="msg-fromUser">${data.from}</span>
+              <span> para </span>
               <span class="msg-toUser">${data.to}</span>
-              <span class="msg-text">${data.text}</span>
+              <span class="msg-text">: ${data.text}</span>
             </p>
             </div>`;
 
@@ -171,7 +178,7 @@ function sendMsg() {
 function axiosSignIn(name) {
     const n = {name: name};
     console.log(n);
-    axios.post('https://mock-api.driven.com.br/api/vm/uol/participants', n);
+    return axios.post('https://mock-api.driven.com.br/api/vm/uol/participants', n);
 }
 
 function axiosStatusUpdate(name) {

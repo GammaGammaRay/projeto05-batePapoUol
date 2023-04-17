@@ -161,11 +161,11 @@ input:focus{
 }
 
 .pvt {
-  background-color: lightcoral;
+  background-color: #FFDEDE;
 }
 
 .status {
-  background-color: lightgray;
+  background-color: #DCDCDC;
 }
 
 #msg-input {
