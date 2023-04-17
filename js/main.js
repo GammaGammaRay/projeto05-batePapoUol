@@ -15,30 +15,34 @@ function updateTime() {
 }
 
 var messages = [];
+var lastMsgTime = -1;
 
 setInterval(updateTime, 1000);
+// setInterval(renderMessages, 1000);
 
 
 var username = "";
 
 function login() {
     var newUser = document.getElementById("username").value;
+    var data = axios.get('https://mock-api.driven.com.br/api/vm/uol/participants');
 
     if(newUser === null || newUser === 'Digite seu nome') {
         alert("Escreva um apelido");
     } else {
-        axios.get('https://mock-api.driven.com.br/api/vm/uol/participants')
-            .then(response => {
-                if (checkUniqueUsername(newUser, response.data)) {
-                    username = newUser;
-                    enterChat();
-                    return true;
-                } else {
-                    alert("O apelido já está sendo usado.");
-                }
+        data.then(response => {
+            
+            if (checkUniqueUsername(newUser, response.data)) {
+                console.log("unique username");
+                username = newUser;
+                enterChat();
+                return true;
+              } else {
+                alert("O apelido já está sendo usado.");
+              }
             })
             .catch(error => {
-                console.error(error);
+              console.error(error);
             });
     }
 }
@@ -49,14 +53,20 @@ function enterChat() {
     sendMsgBox.style.display = 'flex';
 
     axiosSignIn(username);
-    
+
     setInterval(() => {
         axiosStatusUpdate(username);
     }, 5000);
 
-    messages = getMessages();
-    console.log("messages: " + messages);
-    renderMessages();
+    setInterval(async () => {
+        try {
+            messages = await getMessages();
+            console.log("messages: ", messages);
+            renderMessages(messages);
+        } catch (error) {
+            console.error(error);
+        }
+    }, 2000);
 }
 
 function checkUniqueUsername(user, data) {
@@ -70,10 +80,10 @@ function checkUniqueUsername(user, data) {
 
 
 function getMessages() {
-    console.log("get messages");
     return new Promise((resolve, reject) => {
         axios.get('https://mock-api.driven.com.br/api/vm/uol/messages')
             .then(response => {
+                console.log(response.data);
                 resolve(response.data);
             })
             .catch(error => {
@@ -83,29 +93,20 @@ function getMessages() {
 }
 
 
-function renderMessages() {
-    console.log("render messages");
-    messages.then((data) => {
-        console.log(messages);
-        for(let i = 0; i < data.length; i++) {
+function renderMessages(data) {
+    for (let i = 0; i < data.length; i++) {
+        
+        const msgTime = timeOffset(data[i].time);
+        data[i].time = msgTime;
+        console.log("current time:" + currentTime);
+        console.log("msg time:" + msgTime);
+        if (compareTime(currentTime, msgTime)) {
+            renderMessageHTML(data[i]);
             
-            const msgTime = timeOffset(data[i].time,9);
-            data[i].time = msgTime;
-            // console.log(data[i]);
-            if(compareTime(currentTime, msgTime)) {
-                lastMsgIndex = i;
-                console.log("current time:" + currentTime);
-                console.log("msg time:" + msgTime);
-                renderMessageHTML(data[i]);
-                
-            }
+        
         }
-    }).finally(() => {
-        setTimeout(() => {
-            renderMessages();
-        }, 1000);
-    });
-}
+      }
+  }
 
 
 
@@ -165,25 +166,32 @@ function axiosStatusUpdate(name) {
 }
 
 function convertToSeconds(time) {
-    const [h,m,s] = time.split(':')
-    var seconds = h * 3600 + m * 60 + s;
+    var [h, m, s] = time.split(':');
+    if(h == 24) {
+        h = 0;
+    }
+    const seconds = parseInt(h, 10) * 3600 + parseInt(m, 10) * 60 + parseInt(s, 10);
     return seconds;
-}
+  }
 
 function compareTime(userTime, msgTime) {
     uTime = convertToSeconds(userTime);
     mTime = convertToSeconds(msgTime);
-
-    const secondsBefore = 1;
+    console.log(uTime);
+    console.log(mTime);
+    const secondsBefore = 10;
 
     if(mTime <= uTime && mTime >= uTime - secondsBefore) {
         return true;
     } else{return false;}
 }
 
-function timeOffset(time, offset) {
+function timeOffset(time) {
     var [h,m,s] = time.split(':');
-    hour = (parseInt(h)+ offset) % 24;
+    hour = (parseInt(h) - 3);
+    if(hour < 0) {
+        hour = 24+hour;
+    }
     hour = hour.toString().padStart(2, '0');
     return `${hour}:${m}:${s}`;
 }
